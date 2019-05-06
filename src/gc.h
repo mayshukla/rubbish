@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 
+#include "collectable.h"
 #include "types.h"
 
 namespace rubbish {
@@ -46,6 +47,8 @@ public:
   void collect(id_vector_t &rootSet) {
     for (auto &id : rootSet) {
       if (idMap.find(id) != idMap.end()) {
+        // Call "destructor
+        static_cast<Collectable *>(idMap[id].first)->destructor();
         delete[] static_cast<char *>(idMap[id].first);
         idMap.erase(id);
       }
