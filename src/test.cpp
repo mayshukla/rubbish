@@ -73,7 +73,6 @@ int main() {
   for (auto &id : gc.getAllIds()) {
     std::cout << id << " ";
   }
-  std::cout << std::endl;
 
   return 0;
 }

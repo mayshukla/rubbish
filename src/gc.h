@@ -60,6 +60,8 @@ public:
    */
   void collect() {
     for (auto &pair : idMap) {
+      // Call "destructor
+      static_cast<Collectable *>(pair.second.first)->destructor();
       delete[] static_cast<char *>(pair.second.first);
     }
     idMap.clear();
