@@ -16,7 +16,7 @@ public:
    * Should return an id_vector_t of id's of objects that this object references.
    */
   virtual id_vector_t references() = 0;
-  virtual void destructor() = 0;
+  virtual ~Collectable() {};
 };
 
 };

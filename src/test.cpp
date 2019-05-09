@@ -16,7 +16,7 @@ public:
   MyBigClass(rubbish::id_t a, rubbish::id_t b) : referenceA(a), referenceB(b){
     std::cout << "Big Constructor" << std::endl;
   }
-  virtual void destructor() {
+  virtual ~MyBigClass() {
     std::cout << "Big Destructor" << std::endl;
   }
   virtual rubbish::id_vector_t references() { return {referenceA, referenceB}; }
@@ -34,7 +34,7 @@ public:
   MyLittleClass() {
     std::cout << "Little Constructor" << std::endl;
   }
-  virtual void destructor() {
+  virtual ~MyLittleClass() {
     std::cout << "Little Destructor" << std::endl;
   }
   virtual rubbish::id_vector_t references() { return {}; }

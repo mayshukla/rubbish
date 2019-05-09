@@ -25,7 +25,7 @@ public:
   bool alloc(id_t &id) {
     // Heap allocate new object
     T* t = new T;
-    // Store that objects id both internally and externally
+    // Store that object's id both internally and externally
     id = nextId;
     idMap[nextId] = {t, sizeof(T)};
     // Ensure next object has a unique id
@@ -47,10 +47,7 @@ public:
   void collect(id_vector_t &rootSet) {
     for (auto &id : rootSet) {
       if (idMap.find(id) != idMap.end()) {
-        // Call "destructor
-        static_cast<Collectable *>(idMap[id].first)->destructor();
-        delete[] static_cast<char *>(idMap[id].first);
-        idMap.erase(id);
+        freeById(id);
       }
     }
   }
@@ -60,9 +57,7 @@ public:
    */
   void collect() {
     for (auto &pair : idMap) {
-      // Call "destructor
-      static_cast<Collectable *>(pair.second.first)->destructor();
-      delete[] static_cast<char *>(pair.second.first);
+      delete pair.second.first;
     }
     idMap.clear();
   }
@@ -80,17 +75,24 @@ public:
 
 private:
   // Maps id's to memory location and size in bytes
-  std::unordered_map<id_t, std::pair<void *, size_t>> idMap;
+  std::unordered_map<id_t, std::pair<Collectable *, size_t>> idMap;
   // Next unique Id
   id_t nextId;
 
   /**
-   * Deletes an object with given id
-   * Calls the rubbish::Collectable::destructor method
+   * Changes nextId to a new unique id
+   * TODO make this better
    */
-  void free(id_t &id) {
-    // cast to Collectable* and call destructor
-    delete[] static_cast<char *>(idMap[id].first);
+  void incrementId() {
+    nextId++;
+  }
+
+  /**
+   * Deletes an object with given id. Also removes it from idMap
+   */
+  void freeById(id_t &id) {
+    delete idMap[id].first;
+    idMap.erase(id);
   }
 };
 
