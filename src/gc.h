@@ -27,7 +27,7 @@ public:
 
   size_t getSize() { return size; }
 
-  size_t setSize(size_t t_size) { size = t_size; }
+  void setSize(size_t t_size) { size = t_size; }
 
   bool isReachable() { return reachable; }
 
@@ -60,7 +60,7 @@ public:
     id = nextId;
     idMap[nextId] = {t, sizeof(T)};
     // Ensure next object has a unique id
-    nextId++;
+    incrementId();
     return true;
   }
 
@@ -75,19 +75,15 @@ public:
   /**
    * Frees all unused blocks based on what is reachable.
    */
-  void collect(id_vector_t &rootSet) {
-    for (auto &id : rootSet) {
-      if (idMap.find(id) != idMap.end()) {
-        freeById(id);
-      }
-    }
+  void collect() {
+    freeMarkedUnreachable();
   }
 
   /**
    * Frees ALL allocated memory
    */
-  void collect() {
-    for (auto &pair : idMap) {
+  void collectAll() {
+    for (auto pair : idMap) {
       delete pair.second.getPtr();
     }
     idMap.clear();
@@ -98,7 +94,7 @@ public:
    */
   id_vector_t getAllIds() {
     id_vector_t ids;
-    for (auto &pair : idMap) {
+    for (auto pair : idMap) {
       ids.push_back(pair.first);
     }
     return ids;
@@ -109,8 +105,32 @@ public:
    */
   void printAllIds() {
     std::cout << "Known ids: ";
-    for (auto &id : getAllIds()) {
+    for (auto id : getAllIds()) {
       std::cout << id << " ";
+    }
+    std::cout << std::endl;
+  }
+
+  /**
+   * Updates the root set. Should be called before collect().
+   * Also does the marking.
+   */
+  void setRootSet(id_vector_t t_rootSet) {
+    rootSet = t_rootSet;
+    mark();
+  }
+
+  /**
+   * Prints a space-separated list of all reachable ids to std out.
+   */
+  void printReachableIds() {
+    std::cout << "Reachable ids: ";
+    for (auto &pair : idMap) {
+      GCRecord &record = pair.second;
+      std::cout << "id/reachable: " << pair.first << "/" << record.isReachable() << std::endl;
+      if (record.isReachable()) {
+        std::cout << pair.first << " ";
+      }
     }
     std::cout << std::endl;
   }
@@ -118,8 +138,10 @@ public:
 private:
   // Maps id's to memory location and size in bytes
   std::unordered_map<id_t, GCRecord> idMap;
-  // Next unique Id
+  // Next unique id
   id_t nextId;
+  // Root set of id's
+  id_vector_t rootSet;
 
   /**
    * Changes nextId to a new unique id
@@ -132,9 +154,58 @@ private:
   /**
    * Deletes an object with given id. Also removes it from idMap
    */
-  void freeById(id_t &id) {
+  void freeById(const id_t &id) {
+    std::cout << "Freeing: " << id << std::endl;
     delete idMap[id].getPtr();
     idMap.erase(id);
+  }
+
+  /**
+   * Mark objects as reachable/unreachable given a root set.
+   * This is the "mark" phase of mark-and-sweep.
+   */
+  void mark() {
+    // First mark all objects as unreachable
+    for (auto &pair : idMap) {
+      GCRecord &record = pair.second;
+      record.setReachable(false);
+    }
+
+    for (auto &id : rootSet) {
+      markIdRecursive(id);
+    }
+  }
+
+  /**
+   * Mark an object with id "id" as reachable and also recursively mark all the
+   * objects it references as reachable.
+   */
+  void markIdRecursive(const id_t &id) {
+    std::cout << "Marking id: "  << id << std::endl;
+    GCRecord &record = idMap[id];
+    // Mark current object reachable
+    record.setReachable(true);
+    // Mark all objects it references as reachable
+    for (auto reachableId : record.getPtr()->references()) {
+      std::cout << "Current id: " << id;
+      std::cout << " references: " << reachableId << std::endl;
+      markIdRecursive(reachableId);
+    }
+  }
+
+  /**
+   * Deletes all objects that have been marked unreachable.
+   * This is the "sweep" phase of mark-and-sweep.
+   */
+  void freeMarkedUnreachable() {
+    for (auto &pair : idMap) {
+      GCRecord &record = pair.second;
+      //std::cout << "id/reachable: " << pair.first << "/" << record.isReachable() << std::endl;
+      if (!(record.isReachable())) {
+        freeById(pair.first);
+      }
+    }
+    std::cout << "Done sweeping" << std::endl;
   }
 };
 

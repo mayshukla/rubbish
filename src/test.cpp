@@ -53,10 +53,12 @@ int main() {
   rubbish::id_t idA;
   rubbish::id_t idB;
   rubbish::id_t idC;
+  rubbish::id_t idD;
 
   gc.alloc<MyLittleClass>(idA);
   gc.alloc<MyLittleClass>(idB);
   gc.alloc<MyBigClass>(idC);
+  gc.alloc<MyLittleClass>(idD);
 
   // Make object C reference A and B
   gc.reference<MyBigClass>(idC).setA(idA);
@@ -67,14 +69,17 @@ int main() {
   // Delete all objects that are not in rootSet or referenced by rootSet
   rubbish::id_vector_t rootSet;
   rootSet.push_back(idC);
-  gc.collect(rootSet);
-
+  gc.setRootSet(rootSet);
+  gc.printReachableIds();
   gc.printAllIds();
-
-  // Free all managed memory
   gc.collect();
 
-  gc.printAllIds();
+  //gc.printAllIds();
+  //gc.printReachableIds();
+
+  // Free all managed memory
+  //gc.collect();
+  //gc.printAllIds();
 
   return 0;
 }
