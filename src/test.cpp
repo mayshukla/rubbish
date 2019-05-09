@@ -13,17 +13,24 @@
  */
 class MyBigClass : public rubbish::Collectable {
 public:
-  MyBigClass(rubbish::id_t a, rubbish::id_t b) : referenceA(a), referenceB(b){
+  MyBigClass() {
     std::cout << "Big Constructor" << std::endl;
+  }
+  void setA(rubbish::id_t t_a) {
+    a = t_a;
+  }
+  void setB(rubbish::id_t t_b) {
+    b = t_b;
   }
   virtual ~MyBigClass() {
     std::cout << "Big Destructor" << std::endl;
   }
-  virtual rubbish::id_vector_t references() { return {referenceA, referenceB}; }
+  virtual rubbish::id_vector_t references() { return {a, b}; }
 
 private:
-  rubbish::id_t referenceA;
-  rubbish::id_t referenceB;
+  // References to other rubbish-managed objects
+  rubbish::id_t a;
+  rubbish::id_t b;
 };
 
 /**
@@ -49,30 +56,25 @@ int main() {
 
   gc.alloc<MyLittleClass>(idA);
   gc.alloc<MyLittleClass>(idB);
-  gc.alloc<MyLittleClass>(idC);
+  gc.alloc<MyBigClass>(idC);
 
-  // print ids known by GC instance
-  for (auto &id : gc.getAllIds()) {
-    std::cout << id << " ";
-  }
-  std::cout << std::endl;
+  // Make object C reference A and B
+  gc.reference<MyBigClass>(idC).setA(idA);
+  gc.reference<MyBigClass>(idC).setB(idB);
 
+  gc.printAllIds();
+
+  // Delete all objects that are not in rootSet or referenced by rootSet
   rubbish::id_vector_t rootSet;
   rootSet.push_back(idC);
   gc.collect(rootSet);
 
-  // print ids known by GC instance
-  for (auto &id : gc.getAllIds()) {
-    std::cout << id << " ";
-  }
-  std::cout << std::endl;
+  gc.printAllIds();
 
+  // Free all managed memory
   gc.collect();
 
-  // print ids known by GC instance
-  for (auto &id : gc.getAllIds()) {
-    std::cout << id << " ";
-  }
+  gc.printAllIds();
 
   return 0;
 }
