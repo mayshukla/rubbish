@@ -127,7 +127,6 @@ public:
     std::cout << "Reachable ids: ";
     for (auto &pair : idMap) {
       GCRecord &record = pair.second;
-      std::cout << "id/reachable: " << pair.first << "/" << record.isReachable() << std::endl;
       if (record.isReachable()) {
         std::cout << pair.first << " ";
       }
@@ -152,15 +151,6 @@ private:
   }
 
   /**
-   * Deletes an object with given id. Also removes it from idMap
-   */
-  void freeById(const id_t &id) {
-    std::cout << "Freeing: " << id << std::endl;
-    delete idMap[id].getPtr();
-    idMap.erase(id);
-  }
-
-  /**
    * Mark objects as reachable/unreachable given a root set.
    * This is the "mark" phase of mark-and-sweep.
    */
@@ -181,14 +171,12 @@ private:
    * objects it references as reachable.
    */
   void markIdRecursive(const id_t &id) {
-    std::cout << "Marking id: "  << id << std::endl;
     GCRecord &record = idMap[id];
     // Mark current object reachable
     record.setReachable(true);
     // Mark all objects it references as reachable
+    // TODO optimize
     for (auto reachableId : record.getPtr()->references()) {
-      std::cout << "Current id: " << id;
-      std::cout << " references: " << reachableId << std::endl;
       markIdRecursive(reachableId);
     }
   }
@@ -198,14 +186,16 @@ private:
    * This is the "sweep" phase of mark-and-sweep.
    */
   void freeMarkedUnreachable() {
-    for (auto &pair : idMap) {
-      GCRecord &record = pair.second;
-      //std::cout << "id/reachable: " << pair.first << "/" << record.isReachable() << std::endl;
-      if (!(record.isReachable())) {
-        freeById(pair.first);
+    auto it = idMap.begin();
+    while (it != idMap.end()) {
+      if (!it->second.isReachable()) {
+        delete it->second.getPtr();
+        // Remove from map and make iterator skip to next item
+        it = idMap.erase(it);
+      } else {
+        it++;
       }
     }
-    std::cout << "Done sweeping" << std::endl;
   }
 };
 

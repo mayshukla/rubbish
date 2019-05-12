@@ -73,13 +73,12 @@ int main() {
   gc.printReachableIds();
   gc.printAllIds();
   gc.collect();
-
-  //gc.printAllIds();
-  //gc.printReachableIds();
+  gc.printAllIds();
 
   // Free all managed memory
-  //gc.collect();
-  //gc.printAllIds();
+  gc.setRootSet({});
+  gc.collect();
+  gc.printAllIds();
 
   return 0;
 }
